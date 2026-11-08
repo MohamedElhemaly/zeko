@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
             --primary: #2563eb;
@@ -1588,10 +1589,13 @@
             } catch(e) {}
         }
 
-        // Save and compile PDF via Backend or Direct Print
+        // Save and compile PDF via Backend or Direct Download / Print
         async function saveAndCompilePdf() {
-            showToast("Saving and compiling PDF...");
-            if (window.location.protocol.startsWith("http")) {
+            saveLocalBackup();
+
+            // If running with local python backend
+            if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+                showToast("Saving and compiling PDF via local server...");
                 try {
                     const res = await fetch("/api/save", {
                         method: "POST",
@@ -1601,19 +1605,35 @@
                     const result = await res.json();
                     if (result.success) {
                         showToast("✨ PDF generated successfully!");
-                        // Optionally trigger open
                         fetch("/api/open-pdf", { method: "POST" });
                         return;
-                    } else {
-                        showToast("❌ Server error: " + (result.error || "Unknown"));
                     }
                 } catch(e) {
-                    console.error(e);
+                    console.log("Local backend failed, falling back to client PDF:", e);
                 }
             }
-            // Fallback for standalone file:// mode
-            showToast("Opening print dialog to Save as PDF...");
-            window.print();
+
+            // Web / Vercel mode: Use html2pdf for direct download or browser print
+            showToast("Generating PDF download...");
+            if (window.html2pdf) {
+                const sheet = document.getElementById("previewSheet");
+                const opt = {
+                    margin: [10, 10, 10, 10],
+                    filename: 'music_teacher_schedule.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, logging: false },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+                html2pdf().set(opt).from(sheet).save().then(() => {
+                    showToast("✅ PDF downloaded successfully!");
+                }).catch((err) => {
+                    console.error("html2pdf failed:", err);
+                    window.print();
+                });
+            } else {
+                showToast("Opening print dialog to Save as PDF...");
+                window.print();
+            }
         }
 
         // Export LaTeX .tex file
