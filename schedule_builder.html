@@ -1,0 +1,1779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Schedule Builder & PDF Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #16a34a;
+            --success-hover: #15803d;
+            --bg-canvas: #f1f5f9;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-canvas);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* Custom clearly visible scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 6px;
+            border: 3px solid #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Top Bar */
+        header.top-bar {
+            position: sticky;
+            top: 0;
+            background-color: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .brand-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: white;
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+        }
+
+        .brand-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .brand-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .actions-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        button.btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 14px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+
+        button.btn-primary {
+            background-color: var(--primary);
+            color: white;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+        }
+        button.btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button.btn-success {
+            background-color: var(--success);
+            color: white;
+            box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25);
+        }
+        button.btn-success:hover {
+            background-color: var(--success-hover);
+        }
+
+        button.btn-outline {
+            background-color: var(--surface);
+            border-color: var(--border);
+            color: var(--text-dark);
+        }
+        button.btn-outline:hover {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        /* View Mode Toggle */
+        .view-toggle {
+            display: flex;
+            background: #e2e8f0;
+            padding: 3px;
+            border-radius: 8px;
+            gap: 2px;
+        }
+        .view-toggle button {
+            border: none;
+            background: transparent;
+            padding: 5px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #475569;
+        }
+        .view-toggle button.active {
+            background: white;
+            color: var(--text-dark);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Main Workspace Layout */
+        .app-workspace {
+            flex: 1;
+            display: flex;
+            min-height: calc(100vh - 60px);
+            position: relative;
+        }
+
+        /* Left Panel: Form & Editor */
+        .editor-panel {
+            flex: 1;
+            max-width: 50%;
+            padding: 20px 20px 60px 20px;
+            background-color: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Right Panel: A4 Live Preview */
+        .preview-panel {
+            flex: 1;
+            padding: 30px 20px;
+            background-color: #cbd5e1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            position: sticky;
+            top: 60px;
+            height: calc(100vh - 60px);
+            overflow-y: auto;
+        }
+
+        /* Layout Modes */
+        body.mode-editor-only .editor-panel {
+            max-width: 100%;
+            border-right: none;
+        }
+        body.mode-editor-only .preview-panel {
+            display: none;
+        }
+        body.mode-preview-only .editor-panel {
+            display: none;
+        }
+        body.mode-preview-only .preview-panel {
+            flex: 1;
+            position: static;
+            height: auto;
+            min-height: calc(100vh - 60px);
+        }
+
+        /* Collapsible Section Cards */
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 12px 16px;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #1e293b;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .card-body {
+            padding: 16px;
+        }
+
+        /* Form elements */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .form-control {
+            font-family: inherit;
+            font-size: 13px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            outline: none;
+            transition: border-color 0.15s ease;
+        }
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+        }
+
+        textarea.form-control {
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        /* Day Chips */
+        .days-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .day-chip {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+            font-size: 12.5px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .day-chip .remove-day {
+            cursor: pointer;
+            color: #93c5fd;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .day-chip .remove-day:hover {
+            color: #ef4444;
+        }
+
+        .days-presets {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        /* Editor Schedule Table */
+        .editor-table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        table.editor-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        table.editor-table th {
+            background-color: #f1f5f9;
+            color: #334155;
+            font-weight: 700;
+            padding: 8px 10px;
+            text-align: center;
+            border: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        table.editor-table td {
+            border: 1px solid var(--border);
+            padding: 6px 8px;
+            text-align: center;
+            vertical-align: middle;
+            min-width: 90px;
+        }
+
+        .row-meta-col {
+            background-color: #f8fafc;
+            width: 140px;
+            text-align: left !important;
+        }
+        .row-meta-actions {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+        }
+        .mini-btn {
+            background: none;
+            border: 1px solid #cbd5e1;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            cursor: pointer;
+            color: #475569;
+        }
+        .mini-btn:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+        .mini-btn.danger:hover {
+            background: #fee2e2;
+            color: #dc2626;
+            border-color: #fca5a5;
+        }
+
+        /* Interactive Clickable Cell */
+        .grid-cell-btn {
+            width: 100%;
+            min-height: 44px;
+            border: 1.5px dashed transparent;
+            border-radius: 6px;
+            background: transparent;
+            padding: 4px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            transition: all 0.15s ease;
+            text-align: center;
+        }
+        .grid-cell-btn:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+        .grid-cell-btn.empty-type {
+            color: #94a3b8;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .grid-cell-btn.office-opt-type {
+            background-color: #e0f2fe;
+            color: #0369a1;
+        }
+        .grid-cell-btn.office-best-type {
+            background-color: #bfdbfe;
+            color: #1e40af;
+        }
+        .grid-cell-btn.class-type {
+            background-color: #dcfce7;
+            color: #15803d;
+        }
+        .grid-cell-btn.duty-type {
+            background-color: #fef3c7;
+            color: #b45309;
+        }
+        .grid-cell-btn.meeting-type {
+            background-color: #f3e8ff;
+            color: #7e22ce;
+        }
+
+        .gcell-title {
+            font-weight: 700;
+            font-size: 11px;
+            line-height: 1.2;
+        }
+        .gcell-sub {
+            font-size: 9.5px;
+            opacity: 0.85;
+        }
+
+        /* Break Row in Editor */
+        .editor-break-row {
+            background: #f1f5f9;
+        }
+        .editor-break-title {
+            font-weight: 700;
+            color: #475569;
+            letter-spacing: 1px;
+        }
+
+        /* ================= A4 PREVIEW CONTAINER ================= */
+        .a4-sheet {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            box-shadow: var(--shadow-lg);
+            padding: 20mm 18mm 18mm 18mm;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-sizing: border-box;
+            transform-origin: top center;
+        }
+
+        /* Exact LaTeX Visual Replica */
+        .pv-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .pv-title {
+            font-size: 20pt;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 6px 0;
+            letter-spacing: -0.3px;
+        }
+        .pv-subtitle {
+            font-size: 13pt;
+            color: #4b5563;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .pv-legend {
+            background-color: #f9fafb;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 9px 14px;
+            font-size: 9.5pt;
+            line-height: 1.45;
+            color: #374151;
+            margin-bottom: 22px;
+        }
+
+        .pv-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            margin-bottom: 24px;
+        }
+        .pv-table th, .pv-table td {
+            border-top: 1px solid #e5e7eb;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 10px 6px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .pv-table thead th {
+            background-color: #2563eb !important;
+            color: #ffffff !important;
+            font-weight: 700;
+            font-size: 10.5pt;
+            border-top: 2.5px solid #1e3a8a;
+            border-bottom: 2px solid #1e3a8a;
+            padding: 11px 6px;
+        }
+        .pv-table thead th:first-child {
+            text-align: left;
+            padding-left: 10px;
+            width: 125px;
+        }
+        .pv-time-col {
+            text-align: left !important;
+            padding-left: 10px !important;
+            width: 125px;
+            border-right: 1px solid #e5e7eb;
+        }
+        .pv-time-main {
+            font-weight: 700;
+            font-size: 9.5pt;
+            color: #0f172a;
+            white-space: nowrap;
+        }
+        .pv-time-sub {
+            font-size: 8.5pt;
+            color: #64748b;
+            margin-top: 2px;
+        }
+        .pv-break-row {
+            background-color: #f3f4f6 !important;
+        }
+        .pv-break-cell {
+            font-size: 10pt;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: #1f2937;
+            text-transform: uppercase;
+            padding: 9px !important;
+        }
+        .pv-cell {
+            height: 52px;
+        }
+        .pv-cell-title {
+            font-weight: 700;
+            font-size: 9.5pt;
+            line-height: 1.25;
+        }
+        .pv-cell-sub {
+            font-size: 8.5pt;
+            margin-top: 2px;
+        }
+        .pv-dash {
+            color: #9ca3af;
+            font-size: 14pt;
+            font-weight: 700;
+        }
+
+        .pv-office-opt {
+            background-color: #e0f2fe !important;
+            color: #0369a1;
+        }
+        .pv-office-opt .pv-cell-title {
+            color: #0284c7;
+        }
+        .pv-office-opt .pv-cell-sub {
+            color: #0369a1;
+        }
+
+        .pv-office-best {
+            background-color: #bfdbfe !important;
+            color: #1e40af;
+        }
+        .pv-office-best .pv-cell-title {
+            color: #1d4ed8;
+            font-weight: 800;
+        }
+        .pv-office-best .pv-cell-sub.best {
+            color: #1e3a8a;
+            font-weight: 700;
+        }
+
+        .pv-class-cell {
+            background-color: #ecfdf5 !important;
+            color: #065f46;
+        }
+        .pv-duty-cell {
+            background-color: #fffbeb !important;
+            color: #92400e;
+        }
+        .pv-meeting-cell {
+            background-color: #f5f3ff !important;
+            color: #5b21b6;
+        }
+
+        .pv-table tr:last-child td {
+            border-bottom: 2.5px solid #0f172a;
+        }
+
+        .pv-signature {
+            margin-top: 28px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .pv-sig-box {
+            text-align: center;
+            width: 220px;
+        }
+        .pv-sig-line {
+            border-bottom: 1px solid #4b5563;
+            margin-bottom: 6px;
+            height: 30px;
+        }
+        .pv-sig-text {
+            font-size: 9pt;
+            color: #6b7280;
+        }
+
+        .pv-footer {
+            margin-top: auto;
+            padding-top: 25px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 8.5pt;
+            color: #9ca3af;
+            border-top: 0.5px solid #f1f5f9;
+        }
+
+        /* Modal for editing cell */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-card {
+            background: white;
+            border-radius: 12px;
+            width: 440px;
+            max-width: 90vw;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            overflow: hidden;
+            transform: scale(0.95);
+            transition: transform 0.2s ease;
+        }
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+        .modal-header {
+            padding: 16px 20px;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .modal-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #94a3b8;
+        }
+        .modal-close:hover {
+            color: #0f172a;
+        }
+        .modal-body {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        .preset-btn {
+            border: 1px solid var(--border);
+            background: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.1s ease;
+        }
+        .preset-btn:hover {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+        .preset-btn.active {
+            border-color: var(--primary);
+            background: #dbeafe;
+            color: var(--primary-hover);
+        }
+
+        .modal-footer {
+            padding: 14px 20px;
+            background: #f8fafc;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #0f172a;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-size: 13.5px;
+            font-weight: 500;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.25s ease;
+            z-index: 2000;
+        }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Print Specific CSS */
+        @media print {
+            body {
+                background: white !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+            header.top-bar, .editor-panel, .modal-overlay, .toast, .no-print {
+                display: none !important;
+            }
+            .app-workspace {
+                display: block !important;
+                overflow: visible !important;
+            }
+            .preview-panel {
+                padding: 0 !important;
+                background: none !important;
+                display: block !important;
+            }
+            .a4-sheet {
+                box-shadow: none !important;
+                width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            @page {
+                size: A4 portrait;
+                margin: 20mm 18mm 18mm 18mm;
+            }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation Header -->
+    <header class="top-bar">
+        <div class="brand-area">
+            <div class="brand-icon">📅</div>
+            <div>
+                <div class="brand-title">Schedule Builder & PDF Generator</div>
+                <div class="brand-sub">Dynamic Timetable System</div>
+            </div>
+        </div>
+
+        <!-- View switcher -->
+        <div class="view-toggle no-print">
+            <button id="viewSplitBtn" class="active" onclick="setViewMode('split')">Split View</button>
+            <button id="viewEditorBtn" onclick="setViewMode('editor-only')">Editor</button>
+            <button id="viewPreviewBtn" onclick="setViewMode('preview-only')">Live Preview</button>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="actions-group no-print">
+            <button class="btn btn-outline" onclick="resetToDefault()">🔄 Reset</button>
+            <button class="btn btn-outline" onclick="exportTexFile()">📄 LaTeX (.tex)</button>
+            <button class="btn btn-outline" onclick="exportJsonFile()">💾 Export JSON</button>
+            <button class="btn btn-outline" onclick="document.getElementById('importFileInput').click()">📂 Load JSON</button>
+            <input type="file" id="importFileInput" style="display:none" accept=".json" onchange="importJsonFile(event)">
+            
+            <button class="btn btn-outline" onclick="window.print()">🖨️ Browser Print</button>
+            <button class="btn btn-primary" onclick="saveAndCompilePdf()">⚡ Save & Generate PDF</button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="app-workspace">
+        
+        <!-- Left: Form & Grid Editor -->
+        <div class="editor-panel">
+            
+            <!-- Section 1: Header Information -->
+            <div class="card">
+                <div class="card-header" onclick="toggleCard(this)">
+                    <span>📋 General Document Information</span>
+                    <span>▼</span>
+                </div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>Schedule Title</label>
+                            <input type="text" id="docTitle" class="form-control" oninput="updateGeneralInfo()">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Subtitle / Description</label>
+                            <input type="text" id="docSubtitle" class="form-control" oninput="updateGeneralInfo()">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Legend Note</label>
+                            <textarea id="docLegend" class="form-control" oninput="updateGeneralInfo()"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Teacher / Author Signature Title</label>
+                            <input type="text" id="docSignature" class="form-control" oninput="updateGeneralInfo()">
+                        </div>
+                        <div class="form-group">
+                            <label>Footer Department Text</label>
+                            <input type="text" id="docFooter" class="form-control" oninput="updateGeneralInfo()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Working Days -->
+            <div class="card">
+                <div class="card-header" onclick="toggleCard(this)">
+                    <span>🗓️ Days of the Week</span>
+                    <span>▼</span>
+                </div>
+                <div class="card-body">
+                    <div class="days-container" id="daysChipContainer"></div>
+                    <div class="days-presets">
+                        <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Presets:</span>
+                        <button class="btn btn-outline" style="padding: 4px 8px; font-size: 11px;" onclick="applyDaysPreset(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'])">Sunday – Thursday</button>
+                        <button class="btn btn-outline" style="padding: 4px 8px; font-size: 11px;" onclick="applyDaysPreset(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])">Monday – Friday</button>
+                        <div style="display: flex; gap: 4px; margin-left: auto;">
+                            <input type="text" id="newDayInput" placeholder="Add Day..." class="form-control" style="width: 110px; padding: 4px 8px; font-size: 12px;">
+                            <button class="btn btn-outline" style="padding: 4px 8px; font-size: 12px;" onclick="addCustomDay()">+ Add</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Interactive Table Editor -->
+            <div class="card" style="flex: 1;">
+                <div class="card-header">
+                    <span>✏️ Schedule Matrix & Slots</span>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn btn-outline" style="padding: 3px 8px; font-size: 11px;" onclick="addNewPeriod()">+ Add Period</button>
+                        <button class="btn btn-outline" style="padding: 3px 8px; font-size: 11px;" onclick="addNewBreak()">+ Add Break</button>
+                    </div>
+                </div>
+                <div class="card-body" style="padding: 10px;">
+                    <p style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 10px;">
+                        💡 <strong>Tip:</strong> Click any cell to customize its text, type, or color (Office Hour, Class, Meeting, etc.).
+                    </p>
+                    <div class="editor-table-wrap">
+                        <table class="editor-table" id="editorGridTable">
+                            <!-- Populated dynamically via JS -->
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right: Real-time A4 Document Preview -->
+        <div class="preview-panel">
+            <div class="a4-sheet" id="previewSheet">
+                <!-- Header -->
+                <div class="pv-header">
+                    <h1 class="pv-title" id="pvTitle">Music Department Weekly Schedule</h1>
+                    <p class="pv-subtitle" id="pvSubtitle">Complete Timetable with Designated Office Hours</p>
+                </div>
+
+                <!-- Legend -->
+                <div class="pv-legend" id="pvLegend">
+                    <strong>Schedule Legend:</strong> Highlighted blocks represent dedicated Office Hours for parent consultations, student follow-ups, and administrative tasks. Empty cells (---) indicate active teaching periods or unavailability.
+                </div>
+
+                <!-- Timetable -->
+                <table class="pv-table" id="pvTable">
+                    <!-- Populated dynamically -->
+                </table>
+
+                <!-- Signature -->
+                <div class="pv-signature">
+                    <div class="pv-sig-box">
+                        <div class="pv-sig-line"></div>
+                        <div class="pv-sig-text" id="pvSignature">Music Teacher's Signature</div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="pv-footer">
+                    <div id="pvFooter">Music Department Master Schedule</div>
+                    <div>Page 1 of 1</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Cell Edit Modal -->
+    <div class="modal-overlay" id="cellModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title" id="modalCellTitle">Edit Schedule Cell</div>
+                <button class="modal-close" onclick="closeCellModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 8px;">Quick Presets</label>
+                    <div class="preset-buttons">
+                        <button class="preset-btn" onclick="applyCellPreset('empty')">
+                            <span>⚪</span> Empty (---)
+                        </button>
+                        <button class="preset-btn" onclick="applyCellPreset('office_hour')">
+                            <span>🔷</span> Office Hour (Option)
+                        </button>
+                        <button class="preset-btn" onclick="applyCellPreset('office_hour_best')">
+                            <span>⭐</span> Office Hour (Best)
+                        </button>
+                        <button class="preset-btn" onclick="applyCellPreset('class')">
+                            <span>🟢</span> Class / Teaching
+                        </button>
+                        <button class="preset-btn" onclick="applyCellPreset('duty')">
+                            <span>🟡</span> Duty / Supervision
+                        </button>
+                        <button class="preset-btn" onclick="applyCellPreset('meeting')">
+                            <span>🟣</span> Meeting
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Main Text</label>
+                    <input type="text" id="cellInputText" class="form-control" placeholder="e.g., Office Hour, Grade 5 Music">
+                </div>
+
+                <div class="form-group">
+                    <label>Subtitle / Note (optional)</label>
+                    <input type="text" id="cellInputSubtext" class="form-control" placeholder="e.g., Option, Room 102, Best Option">
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Cell Type</label>
+                        <select id="cellInputType" class="form-control">
+                            <option value="empty">Empty (---)</option>
+                            <option value="office_hour">Office Hour (Option)</option>
+                            <option value="office_hour_best">Office Hour (Best Option)</option>
+                            <option value="class">Class / Teaching</option>
+                            <option value="duty">Duty / Activity</option>
+                            <option value="meeting">Meeting</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeCellModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveCellModal()">Apply Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toastNotification">
+        <span id="toastMessage">Saved successfully</span>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // Initial Default Schedule Data matching music_teacher_schedule.tex
+        const DEFAULT_DATA = {
+            "title": "Music Department Weekly Schedule",
+            "subtitle": "Complete Timetable with Designated Office Hours",
+            "legend": "Schedule Legend: Highlighted blocks represent dedicated Office Hours for parent consultations, student follow-ups, and administrative tasks. Empty cells (---) indicate active teaching periods or unavailability.",
+            "days": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"],
+            "rows": [
+                {
+                    "id": "row_1",
+                    "type": "period",
+                    "time": "08:15 -- 08:55",
+                    "label": "Period 1",
+                    "cells": {
+                        "Sunday": { "type": "empty", "text": "---", "subtext": "" },
+                        "Monday": { "type": "empty", "text": "---", "subtext": "" },
+                        "Tuesday": { "type": "empty", "text": "---", "subtext": "" },
+                        "Wednesday": { "type": "empty", "text": "---", "subtext": "" },
+                        "Thursday": { "type": "empty", "text": "---", "subtext": "" }
+                    }
+                },
+                {
+                    "id": "row_2",
+                    "type": "period",
+                    "time": "08:55 -- 09:35",
+                    "label": "Period 2",
+                    "cells": {
+                        "Sunday": { "type": "empty", "text": "---", "subtext": "" },
+                        "Monday": { "type": "empty", "text": "---", "subtext": "" },
+                        "Tuesday": { "type": "office_hour", "text": "Office Hour", "subtext": "Option" },
+                        "Wednesday": { "type": "office_hour", "text": "Office Hour", "subtext": "Option" },
+                        "Thursday": { "type": "empty", "text": "---", "subtext": "" }
+                    }
+                },
+                {
+                    "id": "row_3",
+                    "type": "period",
+                    "time": "09:35 -- 10:15",
+                    "label": "Period 3",
+                    "cells": {
+                        "Sunday": { "type": "empty", "text": "---", "subtext": "" },
+                        "Monday": { "type": "office_hour_best", "text": "Office Hour", "subtext": "Best Option" },
+                        "Tuesday": { "type": "office_hour", "text": "Office Hour", "subtext": "Option" },
+                        "Wednesday": { "type": "empty", "text": "---", "subtext": "" },
+                        "Thursday": { "type": "office_hour", "text": "Office Hour", "subtext": "Option" }
+                    }
+                },
+                {
+                    "id": "row_break_1",
+                    "type": "break",
+                    "time": "10:15 -- 10:45",
+                    "label": "MORNING BREAK"
+                },
+                {
+                    "id": "row_4",
+                    "type": "period",
+                    "time": "10:45 -- 11:25",
+                    "label": "Period 4",
+                    "cells": {
+                        "Sunday": { "type": "empty", "text": "---", "subtext": "" },
+                        "Monday": { "type": "empty", "text": "---", "subtext": "" },
+                        "Tuesday": { "type": "empty", "text": "---", "subtext": "" },
+                        "Wednesday": { "type": "empty", "text": "---", "subtext": "" },
+                        "Thursday": { "type": "empty", "text": "---", "subtext": "" }
+                    }
+                },
+                {
+                    "id": "row_5",
+                    "type": "period",
+                    "time": "11:25 -- 12:05",
+                    "label": "Period 5",
+                    "cells": {
+                        "Sunday": { "type": "empty", "text": "---", "subtext": "" },
+                        "Monday": { "type": "empty", "text": "---", "subtext": "" },
+                        "Tuesday": { "type": "empty", "text": "---", "subtext": "" },
+                        "Wednesday": { "type": "empty", "text": "---", "subtext": "" },
+                        "Thursday": { "type": "office_hour", "text": "Office Hour", "subtext": "Option" }
+                    }
+                },
+                {
+                    "id": "row_6",
+                    "type": "period",
+                    "time": "12:05 -- 12:45",
+                    "label": "Period 6",
+                    "cells": {
+                        "Sunday": { "type": "office_hour", "text": "Office Hour", "subtext": "Option" },
+                        "Monday": { "type": "empty", "text": "---", "subtext": "" },
+                        "Tuesday": { "type": "office_hour", "text": "Office Hour", "subtext": "Option" },
+                        "Wednesday": { "type": "empty", "text": "---", "subtext": "" },
+                        "Thursday": { "type": "empty", "text": "---", "subtext": "" }
+                    }
+                },
+                {
+                    "id": "row_7",
+                    "type": "period",
+                    "time": "12:45 -- 01:25",
+                    "label": "Period 7",
+                    "cells": {
+                        "Sunday": { "type": "office_hour", "text": "Office Hour", "subtext": "Option" },
+                        "Monday": { "type": "empty", "text": "---", "subtext": "" },
+                        "Tuesday": { "type": "empty", "text": "---", "subtext": "" },
+                        "Wednesday": { "type": "office_hour", "text": "Office Hour", "subtext": "Option" },
+                        "Thursday": { "type": "empty", "text": "---", "subtext": "" }
+                    }
+                }
+            ],
+            "signatureTitle": "Music Teacher's Signature",
+            "footerText": "Music Department Master Schedule",
+            "pageNumberText": "Page 1 of 1"
+        };
+
+        let state = JSON.parse(JSON.stringify(DEFAULT_DATA));
+        let activeEditingCell = null; // { rowIndex, day }
+
+        // Initialize application
+        async function initApp() {
+            // Try fetching from server API if hosted
+            if (window.location.protocol.startsWith("http")) {
+                try {
+                    const res = await fetch("/api/data");
+                    if (res.ok) {
+                        const serverData = await res.json();
+                        if (serverData && serverData.rows) {
+                            state = serverData;
+                        }
+                    }
+                } catch (e) {
+                    console.log("Using local state storage:", e);
+                }
+            } else {
+                // If local file, check localStorage
+                const localSaved = localStorage.getItem("schedule_state");
+                if (localSaved) {
+                    try {
+                        state = JSON.parse(localSaved);
+                    } catch(e){}
+                }
+            }
+
+            populateFormFields();
+            renderDaysChips();
+            renderEditorGrid();
+            renderLivePreview();
+        }
+
+        // View Mode Switcher
+        function setViewMode(mode) {
+            document.body.classList.remove('mode-editor-only', 'mode-preview-only');
+            document.getElementById('viewSplitBtn').classList.remove('active');
+            document.getElementById('viewEditorBtn').classList.remove('active');
+            document.getElementById('viewPreviewBtn').classList.remove('active');
+
+            if (mode === 'editor-only') {
+                document.body.classList.add('mode-editor-only');
+                document.getElementById('viewEditorBtn').classList.add('active');
+            } else if (mode === 'preview-only') {
+                document.body.classList.add('mode-preview-only');
+                document.getElementById('viewPreviewBtn').classList.add('active');
+            } else {
+                document.getElementById('viewSplitBtn').classList.add('active');
+            }
+        }
+
+        function toggleCard(headerEl) {
+            const body = headerEl.nextElementSibling;
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                headerEl.querySelector('span:last-child').textContent = '▼';
+            } else {
+                body.style.display = 'none';
+                headerEl.querySelector('span:last-child').textContent = '▶';
+            }
+        }
+
+        // Sync form inputs with state
+        function populateFormFields() {
+            document.getElementById("docTitle").value = state.title || "";
+            document.getElementById("docSubtitle").value = state.subtitle || "";
+            document.getElementById("docLegend").value = state.legend || "";
+            document.getElementById("docSignature").value = state.signatureTitle || "";
+            document.getElementById("docFooter").value = state.footerText || "";
+        }
+
+        function updateGeneralInfo() {
+            state.title = document.getElementById("docTitle").value;
+            state.subtitle = document.getElementById("docSubtitle").value;
+            state.legend = document.getElementById("docLegend").value;
+            state.signatureTitle = document.getElementById("docSignature").value;
+            state.footerText = document.getElementById("docFooter").value;
+            saveLocalBackup();
+            renderLivePreview();
+        }
+
+        // Working Days Management
+        function renderDaysChips() {
+            const container = document.getElementById("daysChipContainer");
+            container.innerHTML = "";
+            state.days.forEach((day, index) => {
+                const chip = document.createElement("div");
+                chip.className = "day-chip";
+                chip.innerHTML = `
+                    <span>${day}</span>
+                    <span class="remove-day" onclick="removeDay(${index})" title="Remove ${day}">&times;</span>
+                `;
+                container.appendChild(chip);
+            });
+        }
+
+        function removeDay(index) {
+            if (state.days.length <= 1) {
+                alert("You need at least one day in the schedule.");
+                return;
+            }
+            const removed = state.days.splice(index, 1)[0];
+            // Clean up cell keys
+            state.rows.forEach(r => {
+                if (r.cells && r.cells[removed]) {
+                    delete r.cells[removed];
+                }
+            });
+            renderDaysChips();
+            renderEditorGrid();
+            renderLivePreview();
+            saveLocalBackup();
+        }
+
+        function applyDaysPreset(daysArray) {
+            state.days = [...daysArray];
+            // Ensure rows have cells for all days
+            state.rows.forEach(r => {
+                if (r.type === 'period') {
+                    if (!r.cells) r.cells = {};
+                    state.days.forEach(d => {
+                        if (!r.cells[d]) {
+                            r.cells[d] = { type: "empty", text: "---", subtext: "" };
+                        }
+                    });
+                }
+            });
+            renderDaysChips();
+            renderEditorGrid();
+            renderLivePreview();
+            saveLocalBackup();
+            showToast("Applied " + daysArray.join(", "));
+        }
+
+        function addCustomDay() {
+            const input = document.getElementById("newDayInput");
+            const val = input.value.trim();
+            if (!val) return;
+            if (state.days.includes(val)) {
+                alert("Day already exists!");
+                return;
+            }
+            state.days.push(val);
+            input.value = "";
+            // Add cells to rows
+            state.rows.forEach(r => {
+                if (r.type === 'period') {
+                    if (!r.cells) r.cells = {};
+                    r.cells[val] = { type: "empty", text: "---", subtext: "" };
+                }
+            });
+            renderDaysChips();
+            renderEditorGrid();
+            renderLivePreview();
+            saveLocalBackup();
+        }
+
+        // Render Editor Grid
+        function renderEditorGrid() {
+            const table = document.getElementById("editorGridTable");
+            let thead = `<thead><tr><th>Time & Actions</th>`;
+            state.days.forEach(d => {
+                thead += `<th>${d}</th>`;
+            });
+            thead += `</tr></thead>`;
+
+            let tbody = `<tbody>`;
+            state.rows.forEach((row, rowIndex) => {
+                if (row.type === 'break') {
+                    tbody += `
+                    <tr class="editor-break-row">
+                        <td class="row-meta-col">
+                            <input type="text" class="form-control" style="padding: 2px 6px; font-size: 11px;" value="${row.time}" onchange="updateRowTime(${rowIndex}, this.value)">
+                            <div class="row-meta-actions">
+                                <button class="mini-btn" onclick="moveRow(${rowIndex}, -1)" title="Move up">▲</button>
+                                <button class="mini-btn" onclick="moveRow(${rowIndex}, 1)" title="Move down">▼</button>
+                                <button class="mini-btn danger" onclick="deleteRow(${rowIndex})" title="Delete row">🗑️</button>
+                            </div>
+                        </td>
+                        <td colspan="${state.days.length}" style="background: #f1f5f9;">
+                            <input type="text" class="form-control" style="text-align: center; font-weight: bold; letter-spacing: 1px;" value="${row.label}" onchange="updateRowLabel(${rowIndex}, this.value)">
+                        </td>
+                    </tr>
+                    `;
+                } else {
+                    let cellsHtml = "";
+                    state.days.forEach(day => {
+                        const cell = (row.cells && row.cells[day]) || { type: "empty", text: "---", subtext: "" };
+                        let btnClass = "empty-type";
+                        if (cell.type === 'office_hour') btnClass = "office-opt-type";
+                        else if (cell.type === 'office_hour_best') btnClass = "office-best-type";
+                        else if (cell.type === 'class') btnClass = "class-type";
+                        else if (cell.type === 'duty') btnClass = "duty-type";
+                        else if (cell.type === 'meeting') btnClass = "meeting-type";
+
+                        cellsHtml += `
+                        <td>
+                            <button class="grid-cell-btn ${btnClass}" onclick="openCellModal(${rowIndex}, '${day}')">
+                                <div class="gcell-title">${cell.text || '---'}</div>
+                                ${cell.subtext ? `<div class="gcell-sub">${cell.subtext}</div>` : ''}
+                            </button>
+                        </td>
+                        `;
+                    });
+
+                    tbody += `
+                    <tr>
+                        <td class="row-meta-col">
+                            <input type="text" class="form-control" style="font-weight: bold; padding: 2px 6px; font-size: 11px; margin-bottom: 2px;" value="${row.time}" onchange="updateRowTime(${rowIndex}, this.value)">
+                            <input type="text" class="form-control" style="font-size: 10px; padding: 2px 6px; color: #64748b;" value="${row.label}" onchange="updateRowLabel(${rowIndex}, this.value)">
+                            <div class="row-meta-actions">
+                                <button class="mini-btn" onclick="moveRow(${rowIndex}, -1)" title="Move Up">▲</button>
+                                <button class="mini-btn" onclick="moveRow(${rowIndex}, 1)" title="Move Down">▼</button>
+                                <button class="mini-btn danger" onclick="deleteRow(${rowIndex})" title="Delete row">🗑️</button>
+                            </div>
+                        </td>
+                        ${cellsHtml}
+                    </tr>
+                    `;
+                }
+            });
+            tbody += `</tbody>`;
+
+            table.innerHTML = thead + tbody;
+        }
+
+        function updateRowTime(rowIndex, val) {
+            state.rows[rowIndex].time = val;
+            renderLivePreview();
+            saveLocalBackup();
+        }
+
+        function updateRowLabel(rowIndex, val) {
+            state.rows[rowIndex].label = val;
+            renderLivePreview();
+            saveLocalBackup();
+        }
+
+        function moveRow(index, direction) {
+            const target = index + direction;
+            if (target < 0 || target >= state.rows.length) return;
+            const temp = state.rows[index];
+            state.rows[index] = state.rows[target];
+            state.rows[target] = temp;
+            renderEditorGrid();
+            renderLivePreview();
+            saveLocalBackup();
+        }
+
+        function deleteRow(index) {
+            if (confirm("Delete this row?")) {
+                state.rows.splice(index, 1);
+                renderEditorGrid();
+                renderLivePreview();
+                saveLocalBackup();
+            }
+        }
+
+        function addNewPeriod() {
+            const num = state.rows.filter(r => r.type === 'period').length + 1;
+            const newRow = {
+                id: "row_" + Date.now(),
+                type: "period",
+                time: "00:00 -- 00:00",
+                label: `Period ${num}`,
+                cells: {}
+            };
+            state.days.forEach(d => {
+                newRow.cells[d] = { type: "empty", text: "---", subtext: "" };
+            });
+            state.rows.push(newRow);
+            renderEditorGrid();
+            renderLivePreview();
+            saveLocalBackup();
+        }
+
+        function addNewBreak() {
+            const newBreak = {
+                id: "break_" + Date.now(),
+                type: "break",
+                time: "10:15 -- 10:45",
+                label: "BREAK"
+            };
+            state.rows.push(newBreak);
+            renderEditorGrid();
+            renderLivePreview();
+            saveLocalBackup();
+        }
+
+        // Cell Modal Operations
+        function openCellModal(rowIndex, day) {
+            activeEditingCell = { rowIndex, day };
+            const row = state.rows[rowIndex];
+            const cell = (row.cells && row.cells[day]) || { type: "empty", text: "---", subtext: "" };
+
+            document.getElementById("modalCellTitle").textContent = `${day} — ${row.label} (${row.time})`;
+            document.getElementById("cellInputText").value = cell.text === "---" ? "" : (cell.text || "");
+            document.getElementById("cellInputSubtext").value = cell.subtext || "";
+            document.getElementById("cellInputType").value = cell.type || "empty";
+
+            document.getElementById("cellModal").classList.add("active");
+        }
+
+        function closeCellModal() {
+            document.getElementById("cellModal").classList.remove("active");
+            activeEditingCell = null;
+        }
+
+        function applyCellPreset(type) {
+            document.getElementById("cellInputType").value = type;
+            if (type === 'empty') {
+                document.getElementById("cellInputText").value = "---";
+                document.getElementById("cellInputSubtext").value = "";
+            } else if (type === 'office_hour') {
+                document.getElementById("cellInputText").value = "Office Hour";
+                document.getElementById("cellInputSubtext").value = "Option";
+            } else if (type === 'office_hour_best') {
+                document.getElementById("cellInputText").value = "Office Hour";
+                document.getElementById("cellInputSubtext").value = "Best Option";
+            } else if (type === 'class') {
+                document.getElementById("cellInputText").value = "Music Class";
+                document.getElementById("cellInputSubtext").value = "Grade 5";
+            } else if (type === 'duty') {
+                document.getElementById("cellInputText").value = "Duty";
+                document.getElementById("cellInputSubtext").value = "Break Supervision";
+            } else if (type === 'meeting') {
+                document.getElementById("cellInputText").value = "Meeting";
+                document.getElementById("cellInputSubtext").value = "Department";
+            }
+        }
+
+        function saveCellModal() {
+            if (!activeEditingCell) return;
+            const { rowIndex, day } = activeEditingCell;
+            const row = state.rows[rowIndex];
+            if (!row.cells) row.cells = {};
+
+            const type = document.getElementById("cellInputType").value;
+            let text = document.getElementById("cellInputText").value.trim();
+            const subtext = document.getElementById("cellInputSubtext").value.trim();
+
+            if (type === 'empty' && (!text || text === "")) {
+                text = "---";
+            }
+
+            row.cells[day] = {
+                type: type,
+                text: text || "---",
+                subtext: subtext
+            };
+
+            closeCellModal();
+            renderEditorGrid();
+            renderLivePreview();
+            saveLocalBackup();
+        }
+
+        // Render Live Preview (Pixel-perfect LaTeX styling)
+        function renderLivePreview() {
+            document.getElementById("pvTitle").textContent = state.title || "";
+            document.getElementById("pvSubtitle").textContent = state.subtitle || "";
+            document.getElementById("pvSignature").textContent = state.signatureTitle || "";
+            document.getElementById("pvFooter").textContent = state.footerText || "";
+
+            const pvLegend = document.getElementById("pvLegend");
+            if (state.legend && state.legend.trim()) {
+                pvLegend.style.display = "block";
+                pvLegend.innerHTML = `<strong>Schedule Legend:</strong> ${state.legend.replace(/^Schedule Legend:/, '').trim()}`;
+            } else {
+                pvLegend.style.display = "none";
+            }
+
+            // Timetable
+            const table = document.getElementById("pvTable");
+            let thead = `<thead><tr><th>Time / Period</th>`;
+            state.days.forEach(d => {
+                thead += `<th>${d}</th>`;
+            });
+            thead += `</tr></thead>`;
+
+            let tbody = `<tbody>`;
+            state.rows.forEach(row => {
+                if (row.type === 'break') {
+                    tbody += `
+                    <tr class="pv-break-row">
+                        <td class="pv-time-col"><strong>${row.time}</strong></td>
+                        <td colspan="${state.days.length}" class="pv-break-cell"><strong>${row.label}</strong></td>
+                    </tr>
+                    `;
+                } else {
+                    let tds = "";
+                    state.days.forEach(day => {
+                        const cell = (row.cells && row.cells[day]) || { type: "empty", text: "---", subtext: "" };
+                        if (cell.type === 'empty' || cell.text === '---') {
+                            tds += `<td class="pv-cell"><span class="pv-dash">---</span></td>`;
+                        } else if (cell.type === 'office_hour_best') {
+                            tds += `<td class="pv-cell pv-office-best">
+                                <div class="pv-cell-title">${cell.text}</div>
+                                <div class="pv-cell-sub best">${cell.subtext || 'Best Option'}</div>
+                            </td>`;
+                        } else if (cell.type === 'office_hour') {
+                            tds += `<td class="pv-cell pv-office-opt">
+                                <div class="pv-cell-title">${cell.text}</div>
+                                <div class="pv-cell-sub">${cell.subtext || 'Option'}</div>
+                            </td>`;
+                        } else if (cell.type === 'class') {
+                            tds += `<td class="pv-cell pv-class-cell">
+                                <div class="pv-cell-title">${cell.text}</div>
+                                ${cell.subtext ? `<div class="pv-cell-sub">${cell.subtext}</div>` : ''}
+                            </td>`;
+                        } else if (cell.type === 'duty') {
+                            tds += `<td class="pv-cell pv-duty-cell">
+                                <div class="pv-cell-title">${cell.text}</div>
+                                ${cell.subtext ? `<div class="pv-cell-sub">${cell.subtext}</div>` : ''}
+                            </td>`;
+                        } else if (cell.type === 'meeting') {
+                            tds += `<td class="pv-cell pv-meeting-cell">
+                                <div class="pv-cell-title">${cell.text}</div>
+                                ${cell.subtext ? `<div class="pv-cell-sub">${cell.subtext}</div>` : ''}
+                            </td>`;
+                        } else {
+                            tds += `<td class="pv-cell">
+                                <div class="pv-cell-title">${cell.text}</div>
+                                ${cell.subtext ? `<div class="pv-cell-sub">${cell.subtext}</div>` : ''}
+                            </td>`;
+                        }
+                    });
+
+                    tbody += `
+                    <tr>
+                        <td class="pv-time-col">
+                            <div class="pv-time-main">${row.time}</div>
+                            <div class="pv-time-sub">${row.label}</div>
+                        </td>
+                        ${tds}
+                    </tr>
+                    `;
+                }
+            });
+            tbody += `</tbody>`;
+
+            table.innerHTML = thead + tbody;
+        }
+
+        // Local Storage & Backup
+        function saveLocalBackup() {
+            try {
+                localStorage.setItem("schedule_state", JSON.stringify(state));
+            } catch(e) {}
+        }
+
+        // Save and compile PDF via Backend or Direct Print
+        async function saveAndCompilePdf() {
+            showToast("Saving and compiling PDF...");
+            if (window.location.protocol.startsWith("http")) {
+                try {
+                    const res = await fetch("/api/save", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(state)
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        showToast("✨ PDF generated successfully!");
+                        // Optionally trigger open
+                        fetch("/api/open-pdf", { method: "POST" });
+                        return;
+                    } else {
+                        showToast("❌ Server error: " + (result.error || "Unknown"));
+                    }
+                } catch(e) {
+                    console.error(e);
+                }
+            }
+            // Fallback for standalone file:// mode
+            showToast("Opening print dialog to Save as PDF...");
+            window.print();
+        }
+
+        // Export LaTeX .tex file
+        function exportTexFile() {
+            const num_days = state.days.length;
+            const days_tex = state.days.map(d => `\\textcolor{white}{\\textbf{${d}}}`).join(" & \n");
+
+            let rows_tex = [];
+            state.rows.forEach(row => {
+                if (row.type === 'break') {
+                    rows_tex.push(`\\rowcolor{gray!15} \n\\textbf{${row.time}} & \n\\multicolumn{${num_days}}{c}{\\textbf{\\textsf{${row.label}}}} \\\\\n\\midrule`);
+                } else {
+                    let cell_strs = [];
+                    state.days.forEach(d => {
+                        const c = (row.cells && row.cells[d]) || { type: "empty", text: "---", subtext: "" };
+                        if (c.type === 'empty' || c.text === '---') {
+                            cell_strs.push("\\textcolor{gray}{\\Large ---}");
+                        } else if (c.type === 'office_hour_best') {
+                            cell_strs.push(`\\cellcolor{blue!20}\\textbf{${c.text}}\\newline \\footnotesize \\textbf{${c.subtext || 'Best Option'}}`);
+                        } else if (c.type === 'office_hour') {
+                            cell_strs.push(`\\cellcolor{blue!10}\\textbf{${c.text}}\\newline \\footnotesize ${c.subtext || 'Option'}`);
+                        } else {
+                            const sub = c.subtext ? `\\newline \\footnotesize ${c.subtext}` : '';
+                            cell_strs.push(`\\textbf{${c.text}}${sub}`);
+                        }
+                    });
+                    const timePart = `\\textbf{${row.time}}\\newline \\small \\textcolor{darkgray}{${row.label}}`;
+                    rows_tex.push(`${timePart} &\n${cell_strs.join(" &\n")} \\\\\n\\midrule`);
+                }
+            });
+
+            let allRows = rows_tex.join("\n\n");
+            if (allRows.endsWith("\\midrule")) {
+                allRows = allRows.slice(0, -("\\midrule".length)) + "\\bottomrule";
+            }
+
+            const tex = `\\documentclass[11pt, a4paper]{article}
+\\usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=2cm, right=2cm]{geometry}
+\\usepackage{fontspec}
+\\usepackage[english, bidi=basic, provide=*]{babel}
+\\babelprovide[import, onchar=ids fonts]{english}
+\\babelfont{rm}{Noto Sans}
+\\usepackage{booktabs}
+\\usepackage{tabularx}
+\\usepackage{array}
+\\usepackage[table]{xcolor}
+
+\\begin{document}
+
+\\begin{center}
+    {\\LARGE \\textbf{${state.title}}}\\\\[0.5em]
+    {\\large \\textcolor{darkgray}{${state.subtitle}}}
+\\end{center}
+
+\\vspace{1.5em}
+
+\\noindent
+\\fcolorbox{gray!30}{gray!5}{
+    \\parbox{\\dimexpr\\textwidth-2\\fboxsep-2\\fboxrule\\relax}{
+        \\textbf{${state.legend}}
+    }
+}
+
+\\vspace{2em}
+
+\\renewcommand{\\arraystretch}{2.2}
+\\begin{tabularx}{\\textwidth}{ >{\\raggedright\\arraybackslash}p{2.8cm} *{${num_days}}{>{\\centering\\arraybackslash}X} }
+\\toprule
+\\rowcolor{blue!80}\\textcolor{white}{\\textbf{Time / Period}} & 
+${days_tex} \\\\
+\\midrule
+
+${allRows}
+\\end{tabularx}
+
+\\vspace{4em}
+
+\\hfill
+\\begin{tabular}{c}
+\\rule{5.5cm}{0.4pt} \\\\
+\\small \\textcolor{gray}{${state.signatureTitle}}
+\\end{tabular}
+
+\\vfill
+
+\\noindent\\textcolor{gray}{\\small ${state.footerText} \\hfill ${state.pageNumberText || 'Page 1 of 1'}}
+
+\\end{document}`;
+
+            downloadFile(tex, "music_teacher_schedule.tex", "text/x-tex");
+            showToast("Downloaded music_teacher_schedule.tex");
+        }
+
+        // Export & Import JSON
+        function exportJsonFile() {
+            downloadFile(JSON.stringify(state, null, 2), "schedule_data.json", "application/json");
+            showToast("Exported schedule_data.json");
+        }
+
+        function importJsonFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (imported && imported.rows) {
+                        state = imported;
+                        populateFormFields();
+                        renderDaysChips();
+                        renderEditorGrid();
+                        renderLivePreview();
+                        saveLocalBackup();
+                        showToast("Loaded schedule configuration!");
+                    } else {
+                        alert("Invalid schedule JSON format.");
+                    }
+                } catch(err) {
+                    alert("Failed to parse JSON file.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function resetToDefault() {
+            if (confirm("Reset schedule back to the original Music Teacher template?")) {
+                state = JSON.parse(JSON.stringify(DEFAULT_DATA));
+                populateFormFields();
+                renderDaysChips();
+                renderEditorGrid();
+                renderLivePreview();
+                saveLocalBackup();
+                showToast("Reset to default schedule");
+            }
+        }
+
+        function downloadFile(content, fileName, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById("toastNotification");
+            document.getElementById("toastMessage").textContent = msg;
+            toast.classList.add("show");
+            setTimeout(() => {
+                toast.classList.remove("show");
+            }, 3000);
+        }
+
+        // Start on load
+        window.addEventListener("DOMContentLoaded", initApp);
+    </script>
+</body>
+</html>
+

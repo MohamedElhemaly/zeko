@@ -1,0 +1,254 @@
+{
+  "title": "Music Department Weekly Schedule",
+  "subtitle": "Complete Timetable with Designated Office Hours",
+  "legend": "Schedule Legend: Highlighted blocks represent dedicated Office Hours for parent consultations, student follow-ups, and administrative tasks. Empty cells (---) indicate active teaching periods or unavailability.",
+  "days": [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday"
+  ],
+  "rows": [
+    {
+      "id": "row_1",
+      "type": "period",
+      "time": "08:15 -- 08:55",
+      "label": "Period 1",
+      "cells": {
+        "Sunday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        },
+        "Monday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        },
+        "Tuesday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        },
+        "Wednesday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        },
+        "Thursday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        }
+      }
+    },
+    {
+      "id": "row_2",
+      "type": "period",
+      "time": "08:55 -- 09:35",
+      "label": "Period 2",
+      "cells": {
+        "Sunday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        },
+        "Monday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        },
+        "Tuesday": {
+          "type": "office_hour",
+          "text": "Office Hour",
+          "subtext": "Option"
+        },
+        "Wednesday": {
+          "type": "office_hour",
+          "text": "Office Hour",
+          "subtext": "Option"
+        },
+        "Thursday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        }
+      }
+    },
+    {
+      "id": "row_3",
+      "type": "period",
+      "time": "09:35 -- 10:15",
+      "label": "Period 3",
+      "cells": {
+        "Sunday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        },
+        "Monday": {
+          "type": "office_hour_best",
+          "text": "Office Hour",
+          "subtext": "Best Option"
+        },
+        "Tuesday": {
+          "type": "office_hour",
+          "text": "Office Hour",
+          "subtext": "Option"
+        },
+        "Wednesday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        },
+        "Thursday": {
+          "type": "office_hour",
+          "text": "Office Hour",
+          "subtext": "Option"
+        }
+      }
+    },
+    {
+      "id": "row_break_1",
+      "type": "break",
+      "time": "10:15 -- 10:45",
+      "label": "MORNING BREAK"
+    },
+    {
+      "id": "row_4",
+      "type": "period",
+      "time": "10:45 -- 11:25",
+      "label": "Period 4",
+      "cells": {
+        "Sunday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        },
+        "Monday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        },
+        "Tuesday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        },
+        "Wednesday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        },
+        "Thursday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        }
+      }
+    },
+    {
+      "id": "row_5",
+      "type": "period",
+      "time": "11:25 -- 12:05",
+      "label": "Period 5",
+      "cells": {
+        "Sunday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        },
+        "Monday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        },
+        "Tuesday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        },
+        "Wednesday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        },
+        "Thursday": {
+          "type": "office_hour",
+          "text": "Office Hour",
+          "subtext": "Option"
+        }
+      }
+    },
+    {
+      "id": "row_6",
+      "type": "period",
+      "time": "12:05 -- 12:45",
+      "label": "Period 6",
+      "cells": {
+        "Sunday": {
+          "type": "office_hour",
+          "text": "Office Hour",
+          "subtext": "Option"
+        },
+        "Monday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        },
+        "Tuesday": {
+          "type": "office_hour",
+          "text": "Office Hour",
+          "subtext": "Option"
+        },
+        "Wednesday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        },
+        "Thursday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        }
+      }
+    },
+    {
+      "id": "row_7",
+      "type": "period",
+      "time": "12:45 -- 01:25",
+      "label": "Period 7",
+      "cells": {
+        "Sunday": {
+          "type": "office_hour",
+          "text": "Office Hour",
+          "subtext": "Option"
+        },
+        "Monday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        },
+        "Tuesday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        },
+        "Wednesday": {
+          "type": "office_hour",
+          "text": "Office Hour",
+          "subtext": "Option"
+        },
+        "Thursday": {
+          "type": "empty",
+          "text": "---",
+          "subtext": ""
+        }
+      }
+    }
+  ],
+  "signatureTitle": "Music Teacher's Signature",
+  "footerText": "Music Department Master Schedule",
+  "pageNumberText": "Page 1 of 1"
+}
